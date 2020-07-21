@@ -1,4 +1,13 @@
-module ButtonModule exposing (ButtonModel, ButtonMsg, animationMsg, buttonUpdater, createButton, initButtonModel, toHtml)
+module ButtonModule exposing
+    ( ButtonModel
+    , ButtonMsg
+    , animationMsg
+    , buttonUpdater
+    , createNormalButton
+    , initButtonModel
+    , toHtml
+    , withAnimation
+    )
 
 import Css exposing (..)
 import Css.Animations as CA exposing (keyframes)
@@ -13,12 +22,30 @@ import Task
 
 type MyButton msg
     = MyButton (Options msg) String
+    | AnimatedButton (Options msg) (AnimationOptions msg) String
 
 
 type alias Options msg =
-    { startAnimation : Bool
-    , onClick : Maybe msg
-    , onMouseUp : Maybe msg
+    { onClick : Maybe msg
+    }
+
+
+type alias AnimationOptions msg =
+    { onMouseUp : Maybe msg
+    , startAnimation : Bool
+    }
+
+
+defaultOptions : Options msg
+defaultOptions =
+    { onClick = Nothing
+    }
+
+
+defaultAnimationOptions : AnimationOptions msg
+defaultAnimationOptions =
+    { onMouseUp = Nothing
+    , startAnimation = False
     }
 
 
@@ -37,9 +64,24 @@ initButtonModel =
         { animate = False }
 
 
-createButton : String -> Maybe msg -> Maybe msg -> MyButton msg
-createButton str onClickMsg animateMsg =
-    MyButton { defaultOptions | onClick = onClickMsg, onMouseUp = animateMsg } str
+createNormalButton : String -> Maybe msg -> MyButton msg
+createNormalButton str onClickMsg =
+    MyButton { defaultOptions | onClick = onClickMsg } str
+
+
+withAnimation : msg -> ButtonModel -> MyButton msg -> MyButton msg
+withAnimation animateMsg (ButtonModel model) btn =
+    case btn of
+        MyButton options label ->
+            AnimatedButton options
+                { defaultAnimationOptions
+                    | onMouseUp = Just animateMsg
+                    , startAnimation = model.animate
+                }
+                label
+
+        _ ->
+            btn
 
 
 animationMsg : ButtonMsg
@@ -47,24 +89,38 @@ animationMsg =
     Animate
 
 
-toHtml : ButtonModel -> MyButton msg -> Html msg
-toHtml (ButtonModel model) (MyButton options label) =
-    let
-        styles =
-            buttonStyles model.animate
-    in
-    case ( options.onClick, options.onMouseUp ) of
-        ( Just onClickMsg, Just onMouseUpMsg ) ->
-            button [ onClick onClickMsg, onMouseUp onMouseUpMsg, css <| styles ] [ text label ]
+toHtml : MyButton msg -> Html msg
+toHtml btn =
+    case btn of
+        MyButton options label ->
+            let
+                normalStyles =
+                    buttonStyles False
+            in
+            case options.onClick of
+                Just onClickMsg ->
+                    button [ onClick onClickMsg, css normalStyles ] [ text label ]
 
-        ( Just onClickMsg, Nothing ) ->
-            button [ onClick onClickMsg, css <| styles ] [ text label ]
+                Nothing ->
+                    button [ css <| normalStyles ] [ text label ]
 
-        ( Nothing, Just onMouseUpMsg ) ->
-            button [ onMouseUp onMouseUpMsg, css <| styles ] [ text label ]
+        AnimatedButton options animationOptions label ->
+            let
+                animatedStyles =
+                    buttonStyles <| animationOptions.startAnimation
+            in
+            case ( options.onClick, animationOptions.onMouseUp ) of
+                ( Just onClickMsg, Just onMouseUpMsg ) ->
+                    button [ onClick onClickMsg, onMouseUp onMouseUpMsg, css <| animatedStyles ] [ text label ]
 
-        ( Nothing, Nothing ) ->
-            button [ css <| styles ] [ text label ]
+                ( Just onClickMsg, Nothing ) ->
+                    button [ onClick onClickMsg, css <| animatedStyles ] [ text label ]
+
+                ( Nothing, Just onMouseUpMsg ) ->
+                    button [ onMouseUp onMouseUpMsg, css <| animatedStyles ] [ text label ]
+
+                ( Nothing, Nothing ) ->
+                    button [ css <| animatedStyles ] [ text label ]
 
 
 resetCommand : Cmd ButtonMsg
@@ -82,14 +138,6 @@ buttonUpdater msg (ButtonModel model) =
 
         Reset ->
             ( ButtonModel { model | animate = False }, Cmd.none )
-
-
-defaultOptions : Options msg
-defaultOptions =
-    { startAnimation = True
-    , onClick = Nothing
-    , onMouseUp = Nothing
-    }
 
 
 buttonStyles : Bool -> List Style

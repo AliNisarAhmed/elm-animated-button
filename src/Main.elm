@@ -1,7 +1,17 @@
 module Main exposing (..)
 
 import Browser
-import ButtonModule exposing (ButtonModel, ButtonMsg, animationMsg, buttonUpdater, createButton, initButtonModel, toHtml)
+import ButtonModule
+    exposing
+        ( ButtonModel
+        , ButtonMsg
+        , animationMsg
+        , buttonUpdater
+        , createNormalButton
+        , initButtonModel
+        , toHtml
+        , withAnimation
+        )
 import Css exposing (..)
 import Html
 import Html.Styled exposing (Attribute, Html, button, div, text, toUnstyled)
@@ -31,6 +41,8 @@ init =
 
 type Msg
     = ButtonMsg ButtonMsg
+    | ButtonMsg2 ButtonMsg
+    | NormalButtonClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -42,6 +54,16 @@ update msg model =
                     buttonUpdater btnMsg model.buttonModel
             in
             ( { model | buttonModel = newButtonModel }, Cmd.map ButtonMsg btnCommands )
+
+        ButtonMsg2 btnMsg ->
+            let
+                ( newButtonModel, btnCommands ) =
+                    buttonUpdater btnMsg model.buttonModel2
+            in
+            ( { model | buttonModel2 = newButtonModel }, Cmd.map ButtonMsg btnCommands )
+
+        NormalButtonClicked ->
+            ( { model | value = "Button Clicked" }, Cmd.none )
 
 
 
@@ -55,9 +77,23 @@ view model =
             [ css <|
                 [ position relative ]
             ]
-            [ toHtml model.buttonModel (createButton "Click me" Nothing (Just <| ButtonMsg animationMsg))
-            , toHtml model.buttonModel2 (createButton "Click Me 2" Nothing Nothing)
+            [ toHtml (createNormalButton "Click me" <| Just NormalButtonClicked)
             ]
+        , div
+            [ css <|
+                [ position relative ]
+            ]
+            [ toHtml (createNormalButton "Animated onClick" Nothing |> withAnimation (ButtonMsg animationMsg) model.buttonModel)
+            ]
+        , div
+            [ css <|
+                [ position relative ]
+            ]
+            [ toHtml (createNormalButton "Animated onClick2" Nothing |> withAnimation (ButtonMsg2 animationMsg) model.buttonModel2)
+            ]
+        , div
+            []
+            [ text model.value ]
         ]
 
 

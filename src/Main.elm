@@ -43,6 +43,7 @@ type Msg
     = ButtonMsg ButtonMsg
     | ButtonMsg2 ButtonMsg
     | NormalButtonClicked
+    | ButtonClicked
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -60,10 +61,13 @@ update msg model =
                 ( newButtonModel, btnCommands ) =
                     buttonUpdater btnMsg model.buttonModel2
             in
-            ( { model | buttonModel2 = newButtonModel }, Cmd.map ButtonMsg btnCommands )
+            ( { model | buttonModel2 = newButtonModel }, Cmd.map ButtonMsg2 btnCommands )
 
         NormalButtonClicked ->
             ( { model | value = "Button Clicked" }, Cmd.none )
+
+        ButtonClicked ->
+            ( { model | value = "Animated Button Clicked" }, Cmd.none )
 
 
 
@@ -77,19 +81,34 @@ view model =
             [ css <|
                 [ position relative ]
             ]
-            [ toHtml (createNormalButton "Click me" <| Just NormalButtonClicked)
+            [ toHtml
+                (createNormalButton
+                    "Click me"
+                 <|
+                    Just NormalButtonClicked
+                )
             ]
         , div
             [ css <|
                 [ position relative ]
             ]
-            [ toHtml (createNormalButton "Animated onClick" Nothing |> withAnimation (ButtonMsg animationMsg) model.buttonModel)
+            [ toHtml
+                (createNormalButton
+                    "Animated onClick"
+                    Nothing
+                    |> withAnimation (ButtonMsg animationMsg) model.buttonModel
+                )
             ]
         , div
             [ css <|
                 [ position relative ]
             ]
-            [ toHtml (createNormalButton "Animated onClick2" Nothing |> withAnimation (ButtonMsg2 animationMsg) model.buttonModel2)
+            [ toHtml
+                (createNormalButton
+                    "Animated onClick2"
+                    (Just ButtonClicked)
+                    |> withAnimation (ButtonMsg2 animationMsg) model.buttonModel2
+                )
             ]
         , div
             []

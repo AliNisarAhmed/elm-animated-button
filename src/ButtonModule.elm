@@ -73,12 +73,13 @@ withAnimation : msg -> ButtonModel -> MyButton msg -> MyButton msg
 withAnimation animateMsg (ButtonModel model) btn =
     case btn of
         MyButton options label ->
-            AnimatedButton options
-                { defaultAnimationOptions
-                    | onMouseUp = Just animateMsg
+            let
+                animationOptions =
+                    { onMouseUp = Just animateMsg
                     , startAnimation = model.animate
-                }
-                label
+                    }
+            in
+            AnimatedButton options animationOptions label
 
         _ ->
             btn
@@ -102,12 +103,12 @@ toHtml btn =
                     button [ onClick onClickMsg, css normalStyles ] [ text label ]
 
                 Nothing ->
-                    button [ css <| normalStyles ] [ text label ]
+                    button [ css normalStyles ] [ text label ]
 
         AnimatedButton options animationOptions label ->
             let
                 animatedStyles =
-                    buttonStyles <| animationOptions.startAnimation
+                    buttonStyles animationOptions.startAnimation
             in
             case ( options.onClick, animationOptions.onMouseUp ) of
                 ( Just onClickMsg, Just onMouseUpMsg ) ->
